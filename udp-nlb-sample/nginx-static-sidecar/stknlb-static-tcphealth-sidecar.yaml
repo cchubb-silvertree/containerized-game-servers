@@ -6,7 +6,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-type: "external"
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "80"
-    service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: TCP    
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: TCP
     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
 spec:
   selector:
@@ -58,7 +58,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/supertuxkart:latest
+        #image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/supertuxkart:latest
+        image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/stk:arm0.12.0
         imagePullPolicy: Always
         command: ["/stk-code/start-server.sh"]
         ports:

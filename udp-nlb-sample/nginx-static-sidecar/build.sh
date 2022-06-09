@@ -1,9 +1,10 @@
 #!/bin/bash
-  
+
 account=$(aws sts get-caller-identity --output text --query Account)
 region=${AWS_REGION}
 repo="nginx"
-ver="amd640.1"
+# ver="amd640.1"
+ver="arm0.1"
 
 repo_name='.dkr.ecr.'$region'.amazonaws.com/'$repo':'$ver
 repo_url=$account$repo_name
