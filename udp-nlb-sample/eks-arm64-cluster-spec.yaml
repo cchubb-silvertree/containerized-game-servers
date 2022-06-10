@@ -3,7 +3,7 @@ kind: ClusterConfig
 
 metadata:
   name: arm-us-east-2
-  version: "1.21"
+  version: "1.22"
   region: us-east-2
 
 kubernetesNetworkConfig:
@@ -34,6 +34,6 @@ managedNodeGroups:
     maxSize: 4
     minSize: 1
     tags:
-      project: supertuxkart
+      project: coap
     labels:
-      project: supertuxkart
+      project: coap

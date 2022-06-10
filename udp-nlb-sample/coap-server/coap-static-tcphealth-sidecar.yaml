@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: coap-nlb-svc
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "80"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: TCP
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+spec:
+  selector:
+    app: coapnlb
+  ports:
+    - name: coap
+      protocol: UDP
+      port: 7433
+      targetPort: 7433
+    - name: ota
+      protocol: UDP
+      port: 7434
+      targetPort: 7434
+  type: LoadBalancer
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: coapnlb
+  name: coapnlb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coapnlb
+  template:
+    metadata:
+      labels:
+        app: coapnlb
+    spec:
+      shareProcessNamespace: true
+      containers:
+      - name: nginx
+        image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/nginx:arm0.1
+        imagePullPolicy: Always
+        #command: ["service","nginx","start"]
+        command: ["nginx","-g","daemon off;"]
+        ports:
+          - name: tcp
+            containerPort: 80
+            protocol: TCP
+        readinessProbe:
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 30
+      - name: coapservice
+        env:
+        - name: MESSAGE_QUEUE_URL
+          value: ${MESSAGE_QUEUE_URL}
+        - name: AWS_DEFAULT_REGION
+          value: ${AWS_DEFAULT_REGION}
+        - name: ST_ENV
+          value: ${ST_ENV},
+        - name: MESSAGE_PROCESSOR_ARN
+          value: ${MESSAGE_PROCESSOR_ARN}
+        - name: UDP_SOCKET_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        #image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/supertuxkart:latest
+        #image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/coapservice:latest
+        image: 365644937727.dkr.ecr.us-east-1.amazonaws.com/coapservice:latest
+        imagePullPolicy: Always
+        command: ["node", "-r", "ts-node/register/transpile-only", "-r", "tsconfig-paths/register", "build/src/server/server.js"]
+        ports:
+          - name: coap
+            containerPort: 7433
+            protocol: UDP
+          - name: ota
+            containerPort: 7434
+            protocol: UDP
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        securityContext:
+          capabilities:
+            add:
+            - SYS_PTRACE
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1024Mi
